@@ -28,7 +28,11 @@ const db = mysql.createConnection(
 /* Once this method executes the SQL command, the callback function captures the responses from the query in two variables: the err, which is the error response, and rows, which is the database query response. If there are no errors in the SQL query, the err value is null. This method is the key component that allows SQL commands to be written in a Node.js application.*/
 // get ALL candidates
 app.get('/api/candidates', (req, res) => { // endpoint /api/candidates. Remember, the api in the URL signifies that this is an API endpoint
-    const sql = `SELECT * FROM candidates`;
+    const sql = `SELECT candidates.*, parties.name 
+                AS party_name 
+                FROM candidates 
+                LEFT JOIN parties 
+                ON candidates.party_id = parties.id`;
 
     db.query(sql, (err, rows) => {
         if (err) {
@@ -44,7 +48,12 @@ app.get('/api/candidates', (req, res) => { // endpoint /api/candidates. Remember
 });
 // GET a single candidate
 app.get('/api/candidate/:id', (req, res) => {
-    const sql = `SELECT * FROM candidates WHERE id = ?`;
+    const sql = `SELECT candidates.*, parties.name 
+                AS party_name 
+                FROM candidates 
+                LEFT JOIN parties 
+                ON candidates.party_id = parties.id 
+                WHERE candidates.id = ?`; //still able to use a WHERE clause with a JOIN, but we had to place it at the end of the statement
     const params = [req.params.id];   
     // Because params can be accepted in the database call as an array, params is assigned as an array with a single element, req.params.id
     db.query(sql, params, (err, row) => {
