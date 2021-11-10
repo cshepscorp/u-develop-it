@@ -6,6 +6,7 @@ CREATE TABLE parties (
     name VARCHAR(50) NOT NULL,
     description TEXT
 );
+-- comment 
 
 CREATE TABLE candidates (
   id INTEGER AUTO_INCREMENT PRIMARY KEY,

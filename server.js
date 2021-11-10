@@ -31,10 +31,10 @@ const db = mysql.createConnection(
 // get ALL candidates
 app.get('/api/candidates', (req, res) => { // endpoint /api/candidates. Remember, the api in the URL signifies that this is an API endpoint
     const sql = `SELECT candidates.*, parties.name 
-                AS party_name 
-                FROM candidates 
-                LEFT JOIN parties 
-                ON candidates.party_id = parties.id`;
+                 AS party_name 
+                 FROM candidates 
+                 LEFT JOIN parties 
+                 ON candidates.party_id = parties.id`;
 
     db.query(sql, (err, rows) => {
         if (err) {
@@ -51,11 +51,11 @@ app.get('/api/candidates', (req, res) => { // endpoint /api/candidates. Remember
 // GET a single candidate
 app.get('/api/candidate/:id', (req, res) => {
     const sql = `SELECT candidates.*, parties.name 
-                AS party_name 
-                FROM candidates 
-                LEFT JOIN parties 
-                ON candidates.party_id = parties.id 
-                WHERE candidates.id = ?`; //still able to use a WHERE clause with a JOIN, but we had to place it at the end of the statement
+                 AS party_name 
+                 FROM candidates 
+                 LEFT JOIN parties 
+                 ON candidates.party_id = parties.id 
+                 WHERE candidates.id = ?`; //still able to use a WHERE clause with a JOIN, but we had to place it at the end of the statement
     const params = [req.params.id];   
     // Because params can be accepted in the database call as an array, params is assigned as an array with a single element, req.params.id
     db.query(sql, params, (err, row) => {
@@ -108,7 +108,7 @@ app.post('/api/candidate', ({ body }, res) => { // in callback function, use the
         return;
     }
     const sql = `INSERT INTO candidates (first_name, last_name, industry_connected)
-        VALUES (?,?,?)`;
+                 VALUES (?,?,?)`;
     const params = [body.first_name, body.last_name, body.industry_connected];
     db.query(sql, params, (err, result) => {
         if (err) {
