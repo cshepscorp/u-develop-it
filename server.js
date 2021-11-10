@@ -9,6 +9,8 @@ app.use(express.json());
 
 // import inputCheck module
 const inputCheck = require('./utils/inputCheck');
+const { resourceLimits } = require('worker_threads');
+const { result } = require('lodash');
 
 // connect the application to the MySQL database
 const db = mysql.createConnection(
@@ -17,7 +19,7 @@ const db = mysql.createConnection(
       // Your MySQL username,
       user: 'root',
       // Your MySQL password
-      password: 'Scorpio5!!4',
+      password: '',
       database: 'election'
     },
     console.log('Connected to the election database.')
@@ -119,6 +121,94 @@ app.post('/api/candidate', ({ body }, res) => { // in callback function, use the
         });
     });
 
+});
+
+// update candidate table
+app.put('/api/candidate/:id', (req, res) => {
+    // If the front end will be making this request, though, then we should be extra sure that a party_id was provided before we attempt to update the database. Let's leverage our friend's inputCheck() function again to do so.
+    const errors = inputCheck(req.body, 'party_id');
+    // This now forces any PUT request to /api/candidate/:id to include a party_id property
+    //  Even if the intention is to remove a party affiliation by setting it to null, the party_id property is still required
+    if (errors) {
+        res.status(400).json({ error: err.message });
+        return;
+    }
+    const sql = `UPDATE candidates SET party_id = ?
+                 WHERE id = ?`;
+    const params = [req.body.party_id, req.params.id];
+    // This route might feel a little strange because we're using a parameter for the candidate's id (req.params.id), but the request body contains the party's id (req.body.party_id
+    // Why mix the two? Again, we want to follow best practices for consistency and clarity
+    // The affected row's id should always be part of the route (e.g., /api/candidate/2) while the actual fields we're updating should be part of the body.
+    db.query(sql, params, (err, result) => {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            // check if a record was found
+        } else if (!result.affectedRows) {
+            res.json({
+                message: 'Candidate not found'
+            });
+        } else {
+            res.json({ 
+                message: 'successfully updated candidate',
+                data: req.body,
+                changes: result.affectedRows
+            });
+        }
+    });
+});
+
+// GET all parties
+// The voting app that we're building toward eventually will have an interface to display all parties and display an individual party. Naturally, we'll need to provide API endpoints for each of these features.
+app.get('/api/parties', (req, res) => {
+    const sql = `SELECT * FROM parties`;
+    db.query(sql, (err, rows) => {
+        if (err) {
+            res.status(500).json({ error: err.message });
+            return;
+        }
+        res.json({
+            message: 'successfully accessed parties',
+            data: rows
+        });
+    });
+});
+// GET single party
+app.get('/api/party/:id', (req, res) => {
+    const sql = `SELECT * FROM parties WHERE id = ?`;
+    const params = [req.params.id];
+    db.query(sql, params, (err, row) => {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        res.json({
+            message: 'successfully displayed party',
+            data: row
+        });
+    });
+});
+
+// DELETE single party
+// Building a delete route will give us an opportunity to test the ON DELETE SET NULL constraint effect through the API.
+app.delete('/api/party/:id', (req, res) => {
+    const sql = `DELETE FROM parties WHERE id = ?`;
+    const params = [req.params.id];
+    db.query(sql, params, (err, result) => {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            // checks if anything was deleted
+        } else if (!resourceLimits.affectedRows) {
+            res.json({
+                message: 'Party not found'
+            });
+        } else {
+            res.json({
+                message: 'successfully deleted party',
+                changes: result.affectedRows,
+                id: req.params.id
+            });
+        }
+    });
 });
 
 // Default response for any other request (Not Found)
